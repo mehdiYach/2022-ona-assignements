@@ -1,5 +1,5 @@
 ---
-title: "Exercice 0"
+title: "Exercice0"
 output: pdf_document
 ---
 
@@ -23,8 +23,8 @@ summary(cars)
 
 You can also embed plots, for example:
 
-```{r pressure, echo=TRUE}
+```{r pressure, echo=FALSE}
 plot(pressure)
 ```
 
-Note that the `echo = TRUE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
