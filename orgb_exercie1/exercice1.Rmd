@@ -1,6 +1,6 @@
 ---
 title: "Exercice1"
-output: pdf_document
+output: github_document
 ---
 
 ```{r setup, include=FALSE}
@@ -10,7 +10,7 @@ knitr::opts_chunk$set(echo = TRUE)
 
 # Reading the File
 
-```{r echo=FALSE, message=FALSE}
+```{r  message=FALSE}
 library(readr)
 Connections <- read_csv("C:/Users/Mehdi/Desktop/2022-ona-assignements/orgb_exercie1/Connections.csv")
 #View(Connections)
@@ -23,7 +23,7 @@ df = Connections
 
 # Count of values
 
-```{r echo=FALSE, message=FALSE}
+```{r  message=FALSE}
 library(dplyr)
 library("tidyverse")
 library("igraph")
@@ -37,7 +37,7 @@ my_count <- df %>%
 my_count
 ```
 # Create Nodes and Edges
-```{r echo=FALSE, message=FALSE}
+```{r  message=FALSE}
 
 df = df %>%  unite(name, c("First Name", "Last Name"))
 
@@ -55,7 +55,7 @@ edges %>% head(5)
 
 ```
 # Plotting the network graph
-``` {r echo=FALSE, message=FALSE}
+``` {r message=FALSE}
 
 #install.packages('tidygraph')
 #install.packages('ggraph')
