@@ -7,27 +7,66 @@ output: pdf_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-## GitHub Documents
 
-This is an R Markdown format used for publishing markdown documents to GitHub. When you click the **Knit** button all R code chunks are run and a markdown file (.md) suitable for publishing to GitHub is generated.
+# Reading the File
 
-## Including Code
-
-You can include R code in the document as follows:
-
-```{r cars}
+```{r echo=FALSE, message=FALSE}
 library(readr)
 Connections <- read_csv("C:/Users/Mehdi/Desktop/2022-ona-assignements/orgb_exercie1/Connections.csv")
-View(Connections)
+#View(Connections)
+
+head(Connections)
+
+df = Connections
 
 ```
 
-## Including Plots
+# Count of values
 
-You can also embed plots, for example:
+```{r echo=FALSE, message=FALSE}
+library(dplyr)
+library("tidyverse")
+library("igraph")
 
-```{r pressure, echo=TRUE}
-plot(pressure)
+df = df %>% drop_na(Company)
+
+my_count <- df %>%
+  group_by(Company) %>%
+  count(Company, sort=TRUE) 
+
+my_count
 ```
+# Create Nodes and Edges
+```{r echo=FALSE, message=FALSE}
 
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+df = df %>%  unite(name, c("First Name", "Last Name"))
+
+nodes = df %>% select(c("name", "Company"))
+nodes = nodes %>% rowid_to_column("id")
+
+nodes %>% head(5)
+
+
+edges = df %>% select(c(name, Company)) %>% left_join(nodes %>% select(c(id,name)), by = c("name"="name"))
+edges = edges %>% left_join(edges, by = "Company", keep=FALSE) %>% select(c("id.x", "id.y", "Company")) %>% filter(id.x!=id.y)
+
+colnames(edges) = c("x", "y", "Company")
+edges %>% head(5)
+
+```
+# Plotting the network graph
+``` {r echo=FALSE, message=FALSE}
+
+#install.packages('tidygraph')
+#install.packages('ggraph')
+library(tidygraph)
+library(ggraph)
+
+my_graph = tbl_graph(edges = edges, nodes = nodes, directed = FALSE)
+
+ggraph(my_graph) + 
+  geom_edge_link(aes(color = Company), show.legend = FALSE) + 
+  geom_node_point()+
+  theme_graph()
+
+```
