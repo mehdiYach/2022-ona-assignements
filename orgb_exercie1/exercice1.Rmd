@@ -3,7 +3,7 @@ title: "Exercice1"
 output: github_document
 ---
 
-```{r setup, include=FALSE}
+```{r setup}
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
@@ -55,7 +55,7 @@ edges %>% head(5)
 
 ```
 # Plotting the network graph
-``` {r}
+``` {r message=FALSE}
 
 #install.packages('tidygraph')
 #install.packages('ggraph')
@@ -68,7 +68,6 @@ ggraph(my_graph) +
   geom_edge_link(aes(color = Company), show.legend = FALSE) + 
   geom_node_point()+
   theme_graph()
-
 
 
 ```
