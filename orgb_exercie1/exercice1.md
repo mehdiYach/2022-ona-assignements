@@ -113,6 +113,17 @@ library(tidygraph)
 
     ## Warning: le package 'tidygraph' a été compilé avec la version R 4.1.3
 
+    ## 
+    ## Attachement du package : 'tidygraph'
+
+    ## L'objet suivant est masqué depuis 'package:igraph':
+    ## 
+    ##     groups
+
+    ## L'objet suivant est masqué depuis 'package:stats':
+    ## 
+    ##     filter
+
 ``` r
 library(ggraph)
 ```
@@ -127,5 +138,7 @@ ggraph(my_graph) +
   geom_node_point()+
   theme_graph()
 ```
+
+    ## Using `stress` as default layout
 
 ![](exercice1_files/figure-gfm/unnamed-chunk-4-1.png)<!-- -->

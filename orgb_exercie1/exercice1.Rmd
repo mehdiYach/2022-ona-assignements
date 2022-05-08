@@ -55,7 +55,7 @@ edges %>% head(5)
 
 ```
 # Plotting the network graph
-``` {r message=FALSE}
+``` {r}
 
 #install.packages('tidygraph')
 #install.packages('ggraph')
@@ -68,5 +68,7 @@ ggraph(my_graph) +
   geom_edge_link(aes(color = Company), show.legend = FALSE) + 
   geom_node_point()+
   theme_graph()
+
+
 
 ```
