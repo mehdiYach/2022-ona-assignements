@@ -3,7 +3,7 @@ title: "Exercice1"
 output: github_document
 ---
 
-```{r setup}
+```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
@@ -55,7 +55,7 @@ edges %>% head(5)
 
 ```
 # Plotting the network graph
-``` {r message=FALSE}
+``` {r}
 
 #install.packages('tidygraph')
 #install.packages('ggraph')
