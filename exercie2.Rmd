@@ -7,24 +7,86 @@ output: github_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-## GitHub Documents
 
-This is an R Markdown format used for publishing markdown documents to GitHub. When you click the **Knit** button all R code chunks are run and a markdown file (.md) suitable for publishing to GitHub is generated.
 
-## Including Code
+```{r }
+library(readxl)
+library(dplyr)
+library(tidygraph)
+library(tidyverse)
+library(ggraph)
 
-You can include R code in the document as follows:
+DATASET_EX2 <- read_excel("C:/Users/Mehdi/Desktop/2022-ona-assignements/EX2/DATASET_EX2.xlsx")
+df = DATASET_EX2
+df
 
-```{r cars}
-summary(cars)
 ```
 
 ## Including Plots
 
 You can also embed plots, for example:
 
-```{r pressure, echo=FALSE}
-plot(pressure)
+```{r }
+
+my_graph = as_tbl_graph(df)
+
+ggraph(my_graph) + 
+  geom_edge_link() + 
+  geom_node_point()+
+  geom_node_text(aes(label = name)) +
+  theme_graph()
+
 ```
 
 Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+
+## Centrality degree
+
+```{r }
+
+centrality_deg = my_graph %>% activate(nodes) %>% mutate(degree_of_centrality = centrality_degree())
+
+centrality_deg
+
+```
+
+## Betweeness degree
+
+```{r }
+
+betweeness = centrality_deg %>% activate(nodes) %>% mutate(betweenness = centrality_betweenness())
+
+betweeness
+  
+
+
+
+```
+``` {r }
+
+betweeness %>% filter(name %in% c('A','B','C','D'))
+
+```
+
+# Conclusion
+
+Regarding the centrality degree, it clearly comes that B,C and D are the most interesting seats. They all have the same centrality degree, equal to 5, while A is at 3. The betweeness score allows to select the seat B within the seats B,C,D because it's the one with the highest betweeness score. To note that the seat A is the one with the highest betweeness but considering that it's for a short period of time that the person will be taking the bus, it's more important to build a network rather than being the person that allows to connect people or groups. However, if it's for a long period, the seat A could be interesting as it will act like a bridge to connect two distant groups.
+
+To sum up, if it's for short period, seat B is the more indicated. If it's for a long period, seat A is more important. 
+
+
+
+``` {r }
+
+ggraph(betweeness,  "stress", bbox = 15) +
+  geom_edge_link2(aes(edge_colour = "Red"), edge_width = 1) +
+  geom_node_point(aes(fill = betweenness, size = degree_of_centrality), shape = 22) +
+  geom_node_text(aes(label = name), family = "serif") + geom_node_text(aes(label = degree_of_centrality), repel = TRUE) +
+  scale_size(range = c(2, 5), guide = "none") +
+  theme_graph() 
+
+
+
+```
+
+
