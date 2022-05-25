@@ -1,6 +1,6 @@
 ---
 title: "Exercice3"
-output: github_document
+output: pdf_document
 ---
 
 ```{r setup, include=FALSE}
@@ -221,7 +221,7 @@ ego_nodes = ego_nodes %>% rename(examiner_id=ego_examiner_id,art_unit=art_unit_e
 
 alter_nodes = subset(my_merger, select=c(alter_examiner_id, art_unit_alter, work_group_alter)) 
 
-alter_nodes = alter_nodes %>% rename(examiner_id=alter_examiner_id,n art_unit=art_unit_alter, work_group=work_group_alter)
+alter_nodes = alter_nodes %>% rename(examiner_id=alter_examiner_id,art_unit=art_unit_alter, work_group=work_group_alter)
 
 nodes = distinct(rbind(ego_nodes, alter_nodes)) %>% group_by(examiner_id) %>% summarise(examiner_id = first(examiner_id), art_unit = first(art_unit), work_group = first(work_group))
 
