@@ -1,0 +1,278 @@
+---
+title: "Exercice3"
+output: github_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## GitHub Documents
+
+This is an R Markdown format used for publishing markdown documents to GitHub. When you click the **Knit** button all R code chunks are run and a markdown file (.md) suitable for publishing to GitHub is generated.
+
+## Including Code
+
+You can include R code in the document as follows:
+
+```{r}
+#install.packages('wru')
+library(wru)
+library(arrow)
+library(lubridate)
+library(tidyverse)
+#install.packages('gender')
+library(gender)
+library(gridExtra)
+library(ggplot2)
+library(grid)
+library(igraph)
+library(ggraph)
+```
+
+## Including Plots
+
+You can also embed plots, for example:
+
+```{r}
+library(readr)
+
+#install.packages("arrow")
+library("arrow")
+
+edges <- read_csv("C:/Users/Mehdi/Desktop/2022-ona-assignements/edges_sample.csv")
+
+applications <- read_parquet("C:/Users/Mehdi/Desktop/2022-ona-assignements/app_data_sample.parquet")
+
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+
+
+``` {r}
+# get list of unique first names
+name_of_examiner = applications %>% distinct(examiner_name_first)
+name_of_examiner
+
+```
+# Get Gender
+``` {r}
+library(dplyr)
+gender = name_of_examiner %>% do(outcome = gender(.$examiner_name_first, method = "ssa")) %>% unnest(cols = c(outcome), keep_empty=TRUE) %>% 
+  select(examiner_name_first = name, gender,proportion_female)
+
+gender
+
+
+```
+
+## Joining and Cleaning 
+```{r}
+# keep only the name and the gender columns in the table
+gender = gender %>% select(examiner_name_first, gender)
+
+# Adding the gender to the previous data frame
+applications = applications %>% left_join(gender, by = "examiner_name_first")
+
+applications
+
+```
+
+# Race
+``` {r}
+
+surname = applications %>% distinct(surname = examiner_name_last) 
+
+surname
+
+```
+
+``` {r}
+race = predict_race(voter.file=surname, surname.only=T) %>% as_tibble()
+
+# Get Race probability based on surname 
+
+race = race %>% 
+  mutate(max_proba_race = pmax( pred.his,pred.oth,pred.asi, pred.bla, pred.whi)) 
+
+race = race %>% 
+  mutate(race = case_when(
+    max_proba_race == pred.bla ~ "Black",
+    max_proba_race == pred.whi ~ "white",
+    max_proba_race == pred.asi ~ "Asian",
+    max_proba_race == pred.his ~ "Hispanic",
+    max_proba_race == pred.oth ~ "Other",
+    TRUE ~ NA_character_
+  ))
+
+race
+``` 
+
+``` {r}
+# keeping only the race and the surname
+race = race %>% select(surname,race)
+
+#Joining to the data frame
+applications = applications %>% left_join(race, by = c("examiner_name_last" = "surname"))
+```
+
+
+# Tenure
+
+``` {r}
+
+# get filling dates, start and end date and calculate the tenure
+dates = applications %>% select(examiner_id, filing_date, appl_status_date) %>% mutate(start_date = ymd(filing_date), end_date = as_date( dmy_hms(appl_status_date) )) %>% group_by(examiner_id) %>% 
+  summarise(
+    earliest = min(start_date, na.rm = TRUE), 
+    latest = max(end_date, na.rm = TRUE),
+    tenure = interval(earliest, latest) %/% days(1)
+    ) %>% filter(year(latest)<2018)
+
+dates
+
+```
+
+``` {r}
+# Join to data frame
+applications = applications %>% left_join(dates, by = "examiner_id")
+applications
+
+```
+# Pick two workgroups you want to focus on (remember that a workgroup is
+represented by the first 3 digits of 'examiner_art_unit' value)
+
+``` {r }
+
+
+group_162 = applications[substr(applications$examiner_art_unit, 1,3)==162,]
+
+group_163 = applications[substr(applications$examiner_art_unit, 1,3)==163,]
+
+summary(group_162)
+
+```
+
+``` {r}
+summary(group_163)
+```
+
+
+``` {r}
+library(gridExtra)
+
+par(mfrow=c(1,2))
+
+plot1 = ggplot(group_162, aes(x = factor(gender)))+geom_bar(fill="darkgreen")  
+
+plot2 = ggplot(group_163, aes(x = factor(gender)))+geom_bar(fill="darkblue")
+
+grid.arrange(plot1, plot2, ncol=2)
+
+```
+Both groups seem to have more examiners identified as males. However, the proportion of NA data is more important in the group 162 than in the group 163. We also notice that group 162 seems to have more people in it as there is more male, female and NA data than in group 163.
+
+``` {r}
+
+par(mfrow=c(1,2))
+
+plot3 = ggplot(group_162, aes(x = factor(race)))+geom_bar(fill="darkgreen")  
+
+plot4 = ggplot(group_163, aes(x = factor(race)))+geom_bar(fill="darkblue")
+
+grid.arrange(plot3, plot4, ncol=2)
+
+```
+The most frequent race in both groups is White. It represents the majority. Also, in both groups, the second most frequent race is Asian people. The number of Black and Hispanic people in group 163 is very low. In the group 162, there is more Black and Hispanic people even though they represent a minority compared to the white and asian people. 
+
+
+# Advice networks
+
+``` {r}
+
+# get the work groups of interest
+art_unit = distinct(subset(applications, select=c(examiner_art_unit, examiner_id)))
+
+# add work group to use it as an indicator in the graph and select the groups of interest
+
+art_unit$work_group = substr(art_unit$examiner_art_unit, 1,3)
+
+art_unit = art_unit[art_unit$work_group==162 | art_unit$work_group==163,]
+
+# Merging
+my_merger = merge(x=edges, y=art_unit, by.x="ego_examiner_id", by.y="examiner_id", all.x=TRUE) %>% rename(art_unit_ego = examiner_art_unit, work_group_ego=work_group)
+
+# drop the NA values (other groups than 162 or 163)
+my_merger = drop_na(my_merger)
+
+# Doing the same for the alter examiners
+my_merger = merge(x=my_merger, y=art_unit, by.x="alter_examiner_id", by.y="examiner_id", all.x=TRUE)%>% rename(art_unit_alter = examiner_art_unit, work_group_alter=work_group)
+
+my_merger = drop_na(my_merger)
+
+```
+We have 592 edges left that represents examiners from groups 162 and 163 
+
+``` {r}
+# Ego Nodes vs alter Nodes
+ego_nodes = subset(my_merger, select=c(ego_examiner_id, art_unit_ego, work_group_ego)) 
+
+ego_nodes = ego_nodes %>% rename(examiner_id=ego_examiner_id,art_unit=art_unit_ego,work_group=work_group_ego)
+
+alter_nodes = subset(my_merger, select=c(alter_examiner_id, art_unit_alter, work_group_alter)) 
+
+alter_nodes = alter_nodes %>% rename(examiner_id=alter_examiner_id,n art_unit=art_unit_alter, work_group=work_group_alter)
+
+nodes = distinct(rbind(ego_nodes, alter_nodes)) %>% group_by(examiner_id) %>% summarise(examiner_id = first(examiner_id), art_unit = first(art_unit), work_group = first(work_group))
+
+network = graph_from_data_frame(d=my_merger, vertices=nodes, directed=TRUE)
+network
+
+```
+
+``` {r}
+#Get centrality scores
+
+my_degree <- round(degree(network, v=V(network)),2)
+my_betweenness <- round(betweenness(network),2)
+my_closeness <- round(closeness(network),2)
+
+V(network)$size = my_degree
+V(network)$bet = my_betweenness
+V(network)$clo = my_closeness
+V(network)$color = nodes$art_unit
+
+ggraph(network, layout="kk") +
+  geom_edge_link()+
+  geom_node_point(aes(size=size, color=color), show.legend=T)
+
+```
+
+The visualization shows that the majority of the examiners are getting advised by people from the same art unit. However it seems that some of the examiners are left out of the two big clusters in the graph. Some are are isolated and other are in groups of 2 or 3. Even if the majority of the connections are made within same groups, some of them (as shown in the network at the top) may connect with examiners from other work groups.
+
+
+``` {r}
+
+centralities = data.frame(cbind(my_degree, my_betweenness, my_closeness))
+
+
+centralities[order(-my_degree, -my_betweenness),]
+
+```
+We see that examiner 72253 has the biggest degree of centrality and the highest associated betweeness. The examiner 72814 seems also interesting because of it's high degree of centrality. Let's explore these two.
+
+``` {r}
+
+applications[applications$examiner_id==72253,]
+
+
+```
+This examiner has been working for 17 years. He has been in the art unit 1632 during all this time. This may explain his importance in the network as he is very experienced and should have developed some strong relationships and influence. This person seems to correspond to the central node of the network at the bottom of the graph.
+
+
+``` {r}
+applications[applications$examiner_id==72814,]
+
+
+```
+This examiner also worked during 17 years. However he started in the unit 1631 before moving to unit 1634. This may explain why he has connections with other work groups. As the previous examiner, his importance in the network may be explained by his experience and the relationships he may have built during this 17 years. This examiner corresponds to the biggest node of the network at the top in the graph.
